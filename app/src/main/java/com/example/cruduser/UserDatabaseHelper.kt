@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import androidx.core.content.contentValuesOf
 
 class UserDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -39,6 +40,69 @@ class UserDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
             put(COLUMN_TELEFONE, user.telefone)
         }
         db.insert(TABLE_NAME, null, values)
+        db.close()
+    }
+
+    fun getAllUsers() : List<User> {
+        val usersList = mutableListOf<User>()
+        val db = readableDatabase
+        val query = "SELECT * FROM $TABLE_NAME"
+        val cursor = db.rawQuery(query, null)
+
+        while (cursor.moveToNext()){
+            val id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID))
+            val nome = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NOME))
+            val senha = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SENHA))
+            val email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_EMAIL))
+            val telefone = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TELEFONE))
+
+            val user = User(id, nome, senha, email, telefone)
+            usersList.add(user)
+        }
+        cursor.close()
+        db.close()
+        return usersList
+    }
+
+    fun updateUser(user: User){
+     val db = writableDatabase
+     val values = ContentValues().apply {
+         put(COLUMN_NOME, user.nome)
+         put(COLUMN_SENHA, user.senha)
+         put(COLUMN_EMAIL, user.email)
+         put(COLUMN_TELEFONE, user.telefone)
+     }
+        val whereClause = "$COLUMN_ID = ?"
+        val whereArgs = arrayOf(user.id.toString())
+        db.update(TABLE_NAME, values, whereClause, whereArgs)
+        db.close()
+
+    }
+
+    fun getUserById(userId: Int): User{
+        val db = readableDatabase
+        val query = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_ID = $userId"
+        val cursor = db.rawQuery(query, null)
+        cursor.moveToFirst()
+
+        val id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID))
+        val nome = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NOME))
+        val senha = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SENHA))
+        val email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_EMAIL))
+        val telefone = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TELEFONE))
+
+        cursor.close()
+        db.close()
+        return User(id, nome, senha, email, telefone)
+
+
+    }
+
+    fun deleteUser(userId: Int){
+        val db = writableDatabase
+        val whereClause = "$COLUMN_ID = ?"
+        val whereArgs = arrayOf(userId.toString())
+        db.delete(TABLE_NAME, whereClause, whereArgs)
         db.close()
     }
 
